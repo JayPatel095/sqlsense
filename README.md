@@ -1,9 +1,9 @@
-# sqlense
+# sqlsense
 
 A CLI that explains SQL query plans in plain English and tells you exactly what index to add.
 
 ```
-sqlense --db postgresql://localhost/mydb "SELECT * FROM tickets WHERE user_id = 42"
+sqlsense --db postgresql://localhost/mydb "SELECT * FROM tickets WHERE user_id = 42"
 ```
 
 Runs `EXPLAIN ANALYZE` on a query, parses the execution plan, and prints:

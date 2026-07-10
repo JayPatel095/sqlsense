@@ -1,11 +1,11 @@
-# sqlense — working plan
+# sqlsense — working plan
 
 Distilled from [docs/brief.md](docs/brief.md). Milestones, not steps — order may shift.
 
 ## Definition of shippable v0.1 (the core loop)
 
 ```bash
-sqlense --db postgresql://localhost/testdb "SELECT * FROM orders WHERE customer_id = 1"
+sqlsense --db postgresql://localhost/testdb "SELECT * FROM orders WHERE customer_id = 1"
 ```
 
 must print:
@@ -19,8 +19,8 @@ Everything else is secondary to this.
 ## Milestones
 
 ### M1 — repo is runnable
-- [ ] `pyproject.toml` with `sqlense` CLI entry point (Click)
-- [ ] `sqlense --db <conn> "<query>"` connects and prints raw EXPLAIN output
+- [ ] `pyproject.toml` with `sqlsense` CLI entry point (Click)
+- [ ] `sqlsense --db <conn> "<query>"` connects and prints raw EXPLAIN output
 - [ ] bad connection string → clear error message, not a traceback
 
 ### M2 — plan parser
@@ -57,7 +57,7 @@ Priority order; each rule gets ≥2 pytest cases (one fires, one doesn't):
 - [ ] publish to PyPI
 
 ### Stretch — CI mode
-- [ ] `sqlense --ci --max-cost 10000 query.sql` exits non-zero on findings / cost threshold
+- [ ] `sqlsense --ci --max-cost 10000 query.sql` exits non-zero on findings / cost threshold
 - [ ] GitHub Actions workflow running against a test Postgres container
 
 ## Test fixtures to collect (real output, local Postgres)
