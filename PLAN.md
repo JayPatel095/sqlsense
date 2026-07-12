@@ -19,9 +19,9 @@ Everything else is secondary to this.
 ## Milestones
 
 ### M1 — repo is runnable
-- [ ] `pyproject.toml` with `sqlsense` CLI entry point (Click)
-- [ ] `sqlsense --db <conn> "<query>"` connects and prints raw EXPLAIN output
-- [ ] bad connection string → clear error message, not a traceback
+- [x] `pyproject.toml` with `sqlsense` CLI entry point (Click)
+- [x] `sqlsense --db <conn> "<query>"` connects and prints raw EXPLAIN output (verified on both Postgres and SQLite)
+- [x] bad connection string → clear error message, not a traceback
 
 ### M2 — plan parser
 - [ ] parse `EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON)` into a `PlanNode` dataclass tree
