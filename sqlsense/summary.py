@@ -38,20 +38,70 @@ MISMATCH_FACTOR = 10.0
 
 
 def estimate_ratio(node: PlanNode) -> float | None:
-    raise NotImplementedError
+    if node.plan_rows is None or node.actual_rows is None:
+        return None
+    return max(node.plan_rows, 1) / max(node.actual_rows, 1)
 
 
 def estimate_off(node: PlanNode) -> bool:
-    raise NotImplementedError
+    ratio = estimate_ratio(node)
+    if ratio is None:
+        return False
+    return ratio > MISMATCH_FACTOR or ratio < 1 / MISMATCH_FACTOR
 
 
 def total_time_ms(node: PlanNode) -> float | None:
-    raise NotImplementedError
+    if node.actual_time_ms is None:
+        return None
+    return node.actual_time_ms * (node.actual_loops or 1)
+
+
+def _walk(node: PlanNode):
+    yield node
+    for child in node.children:
+        yield from _walk(child)
 
 
 def top_nodes_by_time(root: PlanNode, n: int = 3) -> list[PlanNode]:
-    raise NotImplementedError
+    timed = [node for node in _walk(root) if total_time_ms(node) is not None]
+    timed.sort(key=total_time_ms, reverse=True)
+    return timed[:n]
 
 
 def summarize(root: PlanNode) -> list[str]:
-    raise NotImplementedError
+    return [
+        _sentence(node) for node in _walk(root) if node.node_type not in GLUE_NODES
+    ]
+
+
+def _sentence(node: PlanNode) -> str:
+    what = node.node_type
+    if node.index_name and node.relation_name:
+        what += f" using {node.index_name} on {node.relation_name}"
+    elif node.relation_name:
+        what += f" on {node.relation_name}"
+
+    clauses = []
+    if node.actual_rows is not None:
+        total_rows = node.actual_rows * (node.actual_loops or 1)
+        rows = f"returned {total_rows:,} rows"
+        if node.actual_loops and node.actual_loops > 1:
+            rows += f" across {node.actual_loops} loops"
+        if node.plan_rows is not None:
+            rows += f" (planner estimated {node.plan_rows:,})"
+        clauses.append(rows)
+    elif node.plan_rows is not None:
+        clauses.append(f"is estimated to return {node.plan_rows:,} rows")
+
+    time = total_time_ms(node)
+    if time is not None:
+        clauses.append(f"in {time:.1f} ms")
+
+    sentence = f"{what} {' '.join(clauses)}".strip()
+
+    ratio = estimate_ratio(node)
+    if ratio is not None and estimate_off(node):
+        factor = ratio if ratio >= 1 else 1 / ratio
+        direction = "over" if ratio >= 1 else "under"
+        sentence += f" — planner estimate off by ~{factor:,.0f}x ({direction})"
+    return sentence
