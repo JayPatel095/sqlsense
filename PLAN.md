@@ -24,16 +24,16 @@ Everything else is secondary to this.
 - [x] bad connection string → clear error message, not a traceback
 
 ### M2 — plan parser
-- [ ] parse `EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON)` into a `PlanNode` dataclass tree
-- [ ] node fields: `node_type`, `actual_rows`, `actual_time_ms`, `plan_rows`, `total_cost`, `children`
-- [ ] real fixture JSON files under `tests/fixtures/` (see fixture list below)
-- [ ] handles the 5 most common node types before iterating further
+- [x] parse `EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON)` into a `PlanNode` dataclass tree
+- [x] node fields: `node_type`, `actual_rows`, `actual_time_ms`, `plan_rows`, `total_cost`, `children` (+ `actual_loops` — Actual Rows/Time are per-loop averages)
+- [x] real fixture JSON files under `tests/fixtures/` (see fixture list below)
+- [x] handles the 5 most common node types before iterating further
 - ⚠ field names vary per node type (`Relation Name` vs `Hash Cond` vs `Index Name`) — extract what's present, read the Postgres EXPLAIN docs first, don't guess
 
 ### M3 — plain-English summary
-- [ ] one sentence per significant node
-- [ ] top 3 nodes by actual time
-- [ ] row estimate mismatch flag: `plan_rows / actual_rows` > 10x or < 0.1x
+- [x] one sentence per significant node (glue nodes like Hash/Materialize skipped)
+- [x] top 3 nodes by actual time (inclusive times; ancestors rank above children — revisit if misleading)
+- [x] row estimate mismatch flag: `plan_rows / actual_rows` > 10x or < 0.1x
 
 ### M4 — lint rules (core IP — take time here)
 Rule = `(PlanNode) -> Optional[LintFinding]`; finding = `severity`, `message`, `suggestion`.
@@ -62,12 +62,12 @@ Priority order; each rule gets ≥2 pytest cases (one fires, one doesn't):
 
 ## Test fixtures to collect (real output, local Postgres)
 
-- [ ] seq scan (no index)
-- [ ] index scan (index hit)
-- [ ] hash join between two tables
-- [ ] nested loop
-- [ ] sort + limit
-- [ ] aggregate (GROUP BY)
+- [x] seq scan (no index)
+- [x] index scan (index hit)
+- [x] hash join between two tables
+- [x] nested loop (needed a `BETWEEN` range join — planner picked hash/merge for every equijoin attempt)
+- [x] sort + limit
+- [x] aggregate (GROUP BY)
 
 ## Known hard parts (flag early, don't push through broken state)
 
