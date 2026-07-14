@@ -37,4 +37,19 @@ def parse_plan(explain_json: list | dict) -> PlanNode:
 
     Child nodes live under each node's "Plans" key.
     """
-    raise NotImplementedError
+    doc = explain_json[0] if isinstance(explain_json, list) else explain_json
+    return _parse_node(doc["Plan"])
+
+
+def _parse_node(raw: dict) -> PlanNode:
+    return PlanNode(
+        node_type=raw["Node Type"],
+        plan_rows=raw.get("Plan Rows"),
+        actual_rows=raw.get("Actual Rows"),
+        actual_time_ms=raw.get("Actual Total Time"),
+        actual_loops=raw.get("Actual Loops"),
+        total_cost=raw.get("Total Cost"),
+        relation_name=raw.get("Relation Name"),
+        index_name=raw.get("Index Name"),
+        children=[_parse_node(child) for child in raw.get("Plans", [])],
+    )
