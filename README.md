@@ -33,14 +33,14 @@ Python 3.10+, Click, psycopg2, sqlite3 (stdlib), Rich, sqlglot, pytest.
 ## Planned Features
 
 - [x] Run `EXPLAIN ANALYZE` on any query against PostgreSQL or SQLite from one CLI command
-- [ ] Plain-English summary of the execution plan, one sentence per significant node
-- [ ] Top cost nodes ranked by actual time
-- [ ] Row estimate mismatch detection (planner off by more than 10x)
-- [ ] Lint: sequential scan on a large table, with a concrete index suggestion
-- [ ] Lint: stale statistics, with an `ANALYZE` suggestion
-- [ ] Lint: hash join or sort spilling to disk, with a `work_mem` suggestion
-- [ ] Lint: nested loop with a large outer relation, flagged as a potential N+1
-- [ ] Lint: index scan whose filter discards most rows, with a partial index suggestion
+- [x] Plain-English summary of the execution plan, one sentence per significant node
+- [x] Top cost nodes ranked by actual time
+- [x] Row estimate mismatch detection (planner off by more than 10x)
+- [x] Lint: sequential scan on a large table, with a concrete index suggestion
+- [x] Lint: stale statistics, with an `ANALYZE` suggestion
+- [x] Lint: hash join or sort spilling to disk, with a `work_mem` suggestion
+- [x] Lint: nested loop with a large outer relation, flagged as a potential N+1
+- [x] Lint: index scan whose filter discards most rows, with a partial index suggestion
 - [ ] Index coverage report with copy-pasteable `CREATE INDEX` statements
 - [ ] Structured JSON output via `--json` for scripting and tooling
 - [ ] Rich terminal output: plan tree, lint table, index report

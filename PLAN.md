@@ -38,11 +38,11 @@ Everything else is secondary to this.
 ### M4 — lint rules (core IP — take time here)
 Rule = `(PlanNode) -> Optional[LintFinding]`; finding = `severity`, `message`, `suggestion`.
 Priority order; each rule gets ≥2 pytest cases (one fires, one doesn't):
-- [ ] 1. seq scan on large table (actual_rows > 10000) → suggest index
-- [ ] 2. row estimate off by > 10x → suggest ANALYZE
-- [ ] 3. hash join / sort spilling to disk (`Batches` > 1) → suggest raising work_mem
-- [ ] 4. nested loop with large outer relation → flag potential N+1
-- [ ] 5. index scan with filter removing > 50% of rows → suggest partial index
+- [x] 1. seq scan on large table → suggest index (deviates from brief: uses rows *scanned* = returned + removed-by-filter, not rows returned — the flagship query returns 100 rows of 100k read and must fire)
+- [x] 2. row estimate off by > 10x → suggest ANALYZE
+- [x] 3. hash join / sort spilling to disk (`Batches` > 1, or Sort Space Type = Disk) → suggest raising work_mem (severity: error)
+- [x] 4. nested loop with large outer relation (> 1000 rows incl. loops) → flag potential N+1
+- [x] 5. index scan with filter removing > 50% of rows → suggest partial index
 
 ### M5 — index coverage report
 - [ ] introspect schema for tables referenced in the query
