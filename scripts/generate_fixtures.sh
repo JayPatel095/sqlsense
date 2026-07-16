@@ -4,6 +4,10 @@
 #
 # Requires the schema from scripts/seed_testdb.sql. Timing values change
 # between runs; node structure should stay stable for the same seed sizes.
+#
+# WARNING: this regenerates EVERY fixture, and tests assert exact values
+# from the committed files — after running it, run pytest and update any
+# stale assertions (or git-restore fixtures you didn't mean to refresh).
 set -euo pipefail
 
 DB="${1:-testdb}"

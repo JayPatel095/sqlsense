@@ -10,8 +10,8 @@
       "Total Cost": 2038.00,
       "Plan Rows": 100,
       "Plan Width": 31,
-      "Actual Startup Time": 0.441,
-      "Actual Total Time": 60.083,
+      "Actual Startup Time": 0.264,
+      "Actual Total Time": 14.660,
       "Actual Rows": 100,
       "Actual Loops": 1,
       "Filter": "(customer_id = 1)",
@@ -39,9 +39,9 @@
       "Temp Read Blocks": 0,
       "Temp Written Blocks": 0
     },
-    "Planning Time": 7.560,
+    "Planning Time": 1.382,
     "Triggers": [
     ],
-    "Execution Time": 60.854
+    "Execution Time": 14.753
   }
 ]
