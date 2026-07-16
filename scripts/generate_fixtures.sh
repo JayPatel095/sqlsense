@@ -23,3 +23,11 @@ explain hash_join       "SELECT c.name, o.total FROM orders o JOIN customers c O
 explain nested_loop     "SELECT c.name, o.total FROM customers c JOIN orders o ON o.id BETWEEN c.id AND c.id + 2 WHERE c.id < 10"
 explain sort_limit      "SELECT * FROM orders ORDER BY total DESC LIMIT 10"
 explain aggregate       "SELECT customer_id, count(*), sum(total) FROM orders GROUP BY customer_id"
+
+# a full sort of 100k rows under a starved work_mem spills to disk
+# (SET and EXPLAIN share one implicit transaction in a single -c)
+psql -d "$DB" -qtA -c "SET work_mem='64kB'; EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) SELECT * FROM orders ORDER BY total" > "$OUT/sort_spill.json"
+echo "wrote sort_spill.json"
+
+# pk range keeps it an index scan; the status filter then discards ~75%
+explain index_scan_filtered "SELECT * FROM orders WHERE id <= 400 AND status = 'pending'"

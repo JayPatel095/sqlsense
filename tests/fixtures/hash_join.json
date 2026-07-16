@@ -9,8 +9,8 @@
       "Total Cost": 2073.61,
       "Plan Rows": 20000,
       "Plan Width": 18,
-      "Actual Startup Time": 0.369,
-      "Actual Total Time": 21.963,
+      "Actual Startup Time": 0.478,
+      "Actual Total Time": 27.284,
       "Actual Rows": 20000,
       "Actual Loops": 1,
       "Inner Unique": true,
@@ -37,8 +37,8 @@
           "Total Cost": 1788.00,
           "Plan Rows": 100000,
           "Plan Width": 10,
-          "Actual Startup Time": 0.009,
-          "Actual Total Time": 8.246,
+          "Actual Startup Time": 0.014,
+          "Actual Total Time": 9.941,
           "Actual Rows": 100000,
           "Actual Loops": 1,
           "Shared Hit Blocks": 788,
@@ -61,8 +61,8 @@
           "Total Cost": 19.50,
           "Plan Rows": 200,
           "Plan Width": 16,
-          "Actual Startup Time": 0.341,
-          "Actual Total Time": 0.342,
+          "Actual Startup Time": 0.442,
+          "Actual Total Time": 0.443,
           "Actual Rows": 200,
           "Actual Loops": 1,
           "Hash Buckets": 1024,
@@ -92,8 +92,8 @@
               "Total Cost": 19.50,
               "Plan Rows": 200,
               "Plan Width": 16,
-              "Actual Startup Time": 0.012,
-              "Actual Total Time": 0.261,
+              "Actual Startup Time": 0.016,
+              "Actual Total Time": 0.144,
               "Actual Rows": 200,
               "Actual Loops": 1,
               "Filter": "(country = 'CA'::text)",
@@ -125,9 +125,9 @@
       "Temp Read Blocks": 0,
       "Temp Written Blocks": 0
     },
-    "Planning Time": 1.527,
+    "Planning Time": 10.224,
     "Triggers": [
     ],
-    "Execution Time": 23.045
+    "Execution Time": 28.643
   }
 ]
