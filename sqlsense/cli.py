@@ -10,6 +10,7 @@ from rich.console import Console
 
 from .db import DatabaseError, connect
 from .explain import run_explain
+from .lint import lint_plan
 from .parser import parse_plan
 from .summary import summarize, top_nodes_by_time, total_time_ms
 
@@ -62,3 +63,13 @@ def main(db_url: str, query: str, raw: bool) -> None:
             console.print(
                 f"  {rank}. {node.node_type}{where} — {total_time_ms(node):.1f} ms{style}"
             )
+
+    findings = lint_plan(root)
+    if findings:
+        console.print("\n[bold]Suggestions[/bold]")
+        for f in findings:
+            badge = "[red]error[/red]" if f.severity == "error" else "[yellow]warn[/yellow]"
+            console.print(f"  {badge} {f.message}")
+            console.print(f"       [green]->[/green] {f.suggestion}")
+    else:
+        console.print("\n[green]No lint findings — this plan looks healthy.[/green]")
