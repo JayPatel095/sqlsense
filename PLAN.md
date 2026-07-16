@@ -44,6 +44,8 @@ Priority order; each rule gets ≥2 pytest cases (one fires, one doesn't):
 - [x] 4. nested loop with large outer relation (> 1000 rows incl. loops) → flag potential N+1
 - [x] 5. index scan with filter removing > 50% of rows → suggest partial index
 
+Plan-level policy (added 2026-07-16): index suggestions (rules 1 and 5) only surface when the same (relation, filter) pattern executes more than once in the plan — via loops or repeated branches; one-shot scans stay silent. Identical findings dedupe into one with a count. Consequence: the brief's flagship single-filter query now reports a healthy plan; the repeated-pattern case (e.g. LATERAL per-row filters) is what fires. Constant normalization ((col = 1) ≡ (col = 2)) waits for sqlglot in M5.
+
 ### M5 — index coverage report
 - [ ] introspect schema for tables referenced in the query
 - [ ] check each filter/join column for an existing index
