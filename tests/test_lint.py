@@ -171,3 +171,67 @@ def test_lint_plan_collects_across_tree():
 
 def test_lint_plan_clean_query_has_no_findings():
     assert lint_plan(load("index_scan")) == []
+
+
+# --- plan-level policy: repetition gating ---
+
+
+def test_one_shot_seq_scan_is_gated_at_plan_level():
+    # the rule detects it node-locally, but a single application of
+    # (customer_id = 1) doesn't justify an index suggestion on its own
+    assert seq_scan_large_table(load("seq_scan")) is not None
+    assert lint_plan(load("seq_scan")) == []
+
+
+def test_one_shot_filtered_index_scan_is_gated_too():
+    assert lint_plan(load("index_scan_filtered")) == []
+
+
+def _repeated_inner_scan(loops: int) -> PlanNode:
+    inner = PlanNode(
+        node_type="Seq Scan", relation_name="orders",
+        filter_cond="(customer_id = c.id)",
+        actual_rows=5, rows_removed_by_filter=20_000,
+        actual_loops=loops, plan_rows=5,
+    )
+    outer = PlanNode(node_type="Seq Scan", relation_name="customers",
+                     actual_rows=loops, actual_loops=1, plan_rows=loops)
+    return PlanNode(node_type="Nested Loop", actual_rows=5 * loops,
+                    plan_rows=5 * loops, children=[outer, inner])
+
+
+def test_filter_repeated_via_loops_fires():
+    findings = lint_plan(_repeated_inner_scan(loops=100))
+    assert any(f.rule == "seq_scan_large_table" for f in findings)
+
+
+def test_same_filter_in_two_branches_fires_once_with_count():
+    scan = dict(node_type="Seq Scan", relation_name="orders",
+                filter_cond="(status = 'x')", actual_rows=20_000,
+                rows_removed_by_filter=80_000, actual_loops=1, plan_rows=20_000)
+    root = PlanNode(node_type="Append",
+                    children=[PlanNode(**scan), PlanNode(**scan)])
+    findings = [f for f in lint_plan(root) if f.rule == "seq_scan_large_table"]
+    assert len(findings) == 1  # deduped: identical advice prints once
+    assert findings[0].count == 2
+
+
+# --- plan-level policy: dedup of identical suggestions ---
+
+
+def test_identical_estimate_findings_merge():
+    scan = dict(node_type="Seq Scan", relation_name="orders",
+                plan_rows=100_000, actual_rows=5, actual_loops=1)
+    root = PlanNode(node_type="Append",
+                    children=[PlanNode(**scan), PlanNode(**scan)])
+    findings = [f for f in lint_plan(root) if f.rule == "bad_row_estimate"]
+    assert len(findings) == 1
+    assert findings[0].count == 2
+
+
+def test_distinct_suggestions_do_not_merge():
+    # nested_loop fixture: root (no relation) says "run ANALYZE", inner
+    # index scan says "run ANALYZE orders" — different advice, keep both
+    findings = [f for f in lint_plan(load("nested_loop"))
+                if f.rule == "bad_row_estimate"]
+    assert len(findings) == 2
