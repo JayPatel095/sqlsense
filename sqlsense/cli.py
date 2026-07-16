@@ -61,7 +61,7 @@ def main(db_url: str, query: str, raw: bool) -> None:
             where = f" on {node.relation_name}" if node.relation_name else ""
             style = " [red](top cost)[/red]" if rank == 1 else ""
             console.print(
-                f"  {rank}. {node.node_type}{where} — {total_time_ms(node):.1f} ms{style}"
+                f"  {rank}. {node.node_type}{where}: {total_time_ms(node):.1f} ms{style}"
             )
 
     findings = lint_plan(root)
