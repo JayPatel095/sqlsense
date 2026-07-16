@@ -37,8 +37,23 @@ The five rules, and the judgment calls baked into them:
    (removed / (removed + returned), per-loop values). The index is doing
    half a job; suggest a partial or composite index covering the filter.
 
-lint_plan returns findings in tree order (pre-order), rules in the order
-above per node.
+Plan-level policy (Jay, 2026-07-16): rules DETECT node-locally, but
+lint_plan decides what surfaces:
+
+a. Repetition gating for index suggestions (rules 1 and 5). An index only
+   clearly pays when the same access pattern is applied repeatedly, so
+   these findings are kept only if the (relation, filter) pattern runs
+   more than once in the plan — either one node re-executed via loops
+   (nested-loop inner side: WHERE col = x per outer row) or the same
+   pattern on 2+ nodes. A single one-shot scan stays silent.
+   v1 matches filter text exactly; normalizing constants so that
+   (col = 1) and (col = 2) count as the same pattern needs sqlglot (M5).
+
+b. Dedup. Findings with identical (rule, suggestion) merge into one
+   with a count — the same advice must never print twice.
+
+lint_plan returns surviving findings in tree order (pre-order), rules in
+the order above per node.
 """
 
 from __future__ import annotations
@@ -60,6 +75,13 @@ class LintFinding:
     message: str
     suggestion: str
     node: PlanNode
+    count: int = 1  # identical findings merged by lint_plan
+
+
+# rules whose advice is "build an index" — gated on pattern repetition
+INDEX_SUGGESTION_RULES = frozenset(
+    {"seq_scan_large_table", "low_selectivity_index_scan"}
+)
 
 
 Rule = Callable[[PlanNode], Optional[LintFinding]]
