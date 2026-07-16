@@ -205,8 +205,43 @@ RULES: list[Rule] = [
 ]
 
 
+def _walk(node: PlanNode):
+    yield node
+    for child in node.children:
+        yield from _walk(child)
+
+
+def _pattern_applications(root: PlanNode) -> dict[tuple, int]:
+    """How many times each (relation, filter) pattern executes in the plan."""
+    counts: dict[tuple, int] = {}
+    for node in _walk(root):
+        if node.relation_name:
+            key = (node.relation_name, node.filter_cond)
+            counts[key] = counts.get(key, 0) + (node.actual_loops or 1)
+    return counts
+
+
 def lint_plan(root: PlanNode) -> list[LintFinding]:
-    findings = [finding for rule in RULES if (finding := rule(root))]
-    for child in root.children:
-        findings.extend(lint_plan(child))
-    return findings
+    applications = _pattern_applications(root)
+
+    detected = [
+        finding for node in _walk(root) for rule in RULES if (finding := rule(node))
+    ]
+
+    # policy a: index suggestions only when the pattern repeats
+    surfaced = [
+        f
+        for f in detected
+        if f.rule not in INDEX_SUGGESTION_RULES
+        or applications.get((f.node.relation_name, f.node.filter_cond), 0) > 1
+    ]
+
+    # policy b: identical advice prints once, with a count
+    merged: dict[tuple[str, str], LintFinding] = {}
+    for f in surfaced:
+        key = (f.rule, f.suggestion)
+        if key in merged:
+            merged[key].count += 1
+        else:
+            merged[key] = f
+    return list(merged.values())
