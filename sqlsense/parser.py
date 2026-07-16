@@ -15,6 +15,10 @@ class PlanNode:
     total_cost: float | None = None
     relation_name: str | None = None
     index_name: str | None = None
+    filter_cond: str | None = None
+    rows_removed_by_filter: int | None = None
+    hash_batches: int | None = None
+    sort_space_type: str | None = None
     children: list[PlanNode] = field(default_factory=list)
 
 
@@ -34,6 +38,10 @@ def parse_plan(explain_json: list | dict) -> PlanNode:
         total_cost     <- "Total Cost"
         relation_name  <- "Relation Name"
         index_name     <- "Index Name"
+        filter_cond    <- "Filter"       (post-scan filter, not the index cond)
+        rows_removed_by_filter <- "Rows Removed by Filter" (per-loop average)
+        hash_batches   <- "Hash Batches" (on Hash nodes; > 1 means disk spill)
+        sort_space_type <- "Sort Space Type" ("Memory" or "Disk", Sort nodes)
 
     Child nodes live under each node's "Plans" key.
     """
@@ -51,5 +59,9 @@ def _parse_node(raw: dict) -> PlanNode:
         total_cost=raw.get("Total Cost"),
         relation_name=raw.get("Relation Name"),
         index_name=raw.get("Index Name"),
+        filter_cond=raw.get("Filter"),
+        rows_removed_by_filter=raw.get("Rows Removed by Filter"),
+        hash_batches=raw.get("Hash Batches"),
+        sort_space_type=raw.get("Sort Space Type"),
         children=[_parse_node(child) for child in raw.get("Plans", [])],
     )

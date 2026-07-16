@@ -29,6 +29,24 @@ def test_seq_scan_root_fields():
     assert node.children == []
 
 
+def test_seq_scan_filter_fields():
+    node = parse_plan(load("seq_scan"))
+    assert node.filter_cond == "(customer_id = 1)"
+    assert node.rows_removed_by_filter == 99900
+
+
+def test_hash_node_batch_count():
+    hash_side = parse_plan(load("hash_join")).children[1]
+    assert hash_side.node_type == "Hash"
+    assert hash_side.hash_batches == 1  # in-memory, no spill
+
+
+def test_sort_space_type_captured():
+    sort = parse_plan(load("sort_limit")).children[0]
+    assert sort.node_type == "Sort"
+    assert sort.sort_space_type == "Memory"
+
+
 def test_index_scan_captures_index_name():
     node = parse_plan(load("index_scan"))
     assert node.node_type == "Index Scan"
