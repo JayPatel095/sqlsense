@@ -65,24 +65,113 @@ class LintFinding:
 Rule = Callable[[PlanNode], Optional[LintFinding]]
 
 
+def _total_rows(node: PlanNode) -> int | None:
+    """Rows a node produced across all loops (actual_rows is per-loop)."""
+    if node.actual_rows is None:
+        return None
+    return node.actual_rows * (node.actual_loops or 1)
+
+
 def seq_scan_large_table(node: PlanNode) -> LintFinding | None:
-    raise NotImplementedError
+    if node.node_type != "Seq Scan" or node.actual_rows is None:
+        return None
+    scanned = (node.actual_rows + (node.rows_removed_by_filter or 0)) * (
+        node.actual_loops or 1
+    )
+    if scanned <= LARGE_SCAN_ROWS:
+        return None
+    where = f" matching {node.filter_cond}" if node.filter_cond else ""
+    return LintFinding(
+        rule="seq_scan_large_table",
+        severity="warn",
+        message=(
+            f"sequential scan read {scanned:,} rows from {node.relation_name} "
+            f"to return {_total_rows(node):,}"
+        ),
+        suggestion=f"add an index on {node.relation_name}{where} so this becomes an index scan",
+        node=node,
+    )
 
 
 def bad_row_estimate(node: PlanNode) -> LintFinding | None:
-    raise NotImplementedError
+    from .summary import estimate_off, estimate_ratio
+
+    if not estimate_off(node):
+        return None
+    ratio = estimate_ratio(node)
+    factor = ratio if ratio >= 1 else 1 / ratio
+    target = f"ANALYZE {node.relation_name}" if node.relation_name else "ANALYZE"
+    return LintFinding(
+        rule="bad_row_estimate",
+        severity="warn",
+        message=(
+            f"planner estimated {node.plan_rows:,} rows for this {node.node_type} "
+            f"but got {node.actual_rows:,} (~{factor:,.0f}x off)"
+        ),
+        suggestion=f"statistics may be stale — run {target}, then re-check the plan",
+        node=node,
+    )
 
 
 def disk_spill(node: PlanNode) -> LintFinding | None:
-    raise NotImplementedError
+    if node.node_type == "Hash" and (node.hash_batches or 1) > 1:
+        detail = f"hash split into {node.hash_batches} batches"
+    elif node.node_type == "Sort" and node.sort_space_type == "Disk":
+        detail = "sort spilled to disk (external merge)"
+    else:
+        return None
+    return LintFinding(
+        rule="disk_spill",
+        severity="error",
+        message=f"{detail} — the working set does not fit in work_mem",
+        suggestion="raise work_mem for this session (SET work_mem = '64MB') and re-run; tune globally only if it recurs",
+        node=node,
+    )
 
 
 def nested_loop_large_outer(node: PlanNode) -> LintFinding | None:
-    raise NotImplementedError
+    if node.node_type != "Nested Loop" or not node.children:
+        return None
+    outer_rows = _total_rows(node.children[0])
+    if outer_rows is None or outer_rows <= LARGE_OUTER_ROWS:
+        return None
+    inner = node.children[1] if len(node.children) > 1 else None
+    inner_name = inner.relation_name if inner and inner.relation_name else "the inner side"
+    return LintFinding(
+        rule="nested_loop_large_outer",
+        severity="warn",
+        message=(
+            f"nested loop re-executes {inner_name} once per outer row "
+            f"({outer_rows:,} times) — N+1 query shape"
+        ),
+        suggestion=(
+            f"check that the join column on {inner_name} is indexed, "
+            "or rewrite so the planner can hash/merge join"
+        ),
+        node=node,
+    )
 
 
 def low_selectivity_index_scan(node: PlanNode) -> LintFinding | None:
-    raise NotImplementedError
+    if node.node_type != "Index Scan" or not node.rows_removed_by_filter:
+        return None
+    returned = node.actual_rows or 0
+    fetched = returned + node.rows_removed_by_filter
+    if fetched == 0 or node.rows_removed_by_filter / fetched <= FILTER_WASTE_FRACTION:
+        return None
+    return LintFinding(
+        rule="low_selectivity_index_scan",
+        severity="warn",
+        message=(
+            f"index {node.index_name} fetched {fetched:,} rows but the filter "
+            f"{node.filter_cond} discarded {node.rows_removed_by_filter:,} of them"
+        ),
+        suggestion=(
+            f"consider a partial or composite index on {node.relation_name} "
+            f"covering {node.filter_cond}"
+        ),
+        node=node,
+    )
 
 
 RULES: list[Rule] = [
@@ -95,4 +184,7 @@ RULES: list[Rule] = [
 
 
 def lint_plan(root: PlanNode) -> list[LintFinding]:
-    raise NotImplementedError
+    findings = [finding for rule in RULES if (finding := rule(root))]
+    for child in root.children:
+        findings.extend(lint_plan(child))
+    return findings
