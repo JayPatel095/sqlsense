@@ -31,23 +31,9 @@ Input is always a PlanNode tree from parser.parse_plan. Three jobs here:
 from __future__ import annotations
 
 from .parser import PlanNode
+from .plan_utils import estimate_off, estimate_ratio, walk
 
 GLUE_NODES = frozenset({"Hash", "Materialize", "Memoize"})
-
-MISMATCH_FACTOR = 10.0
-
-
-def estimate_ratio(node: PlanNode) -> float | None:
-    if node.plan_rows is None or node.actual_rows is None:
-        return None
-    return max(node.plan_rows, 1) / max(node.actual_rows, 1)
-
-
-def estimate_off(node: PlanNode) -> bool:
-    ratio = estimate_ratio(node)
-    if ratio is None:
-        return False
-    return ratio > MISMATCH_FACTOR or ratio < 1 / MISMATCH_FACTOR
 
 
 def total_time_ms(node: PlanNode) -> float | None:
@@ -56,21 +42,15 @@ def total_time_ms(node: PlanNode) -> float | None:
     return node.actual_time_ms * (node.actual_loops or 1)
 
 
-def _walk(node: PlanNode):
-    yield node
-    for child in node.children:
-        yield from _walk(child)
-
-
 def top_nodes_by_time(root: PlanNode, n: int = 3) -> list[PlanNode]:
-    timed = [node for node in _walk(root) if total_time_ms(node) is not None]
+    timed = [node for node in walk(root) if total_time_ms(node) is not None]
     timed.sort(key=total_time_ms, reverse=True)
     return timed[:n]
 
 
 def summarize(root: PlanNode) -> list[str]:
     return [
-        _sentence(node) for node in _walk(root) if node.node_type not in GLUE_NODES
+        _sentence(node) for node in walk(root) if node.node_type not in GLUE_NODES
     ]
 
 
