@@ -62,6 +62,7 @@ from dataclasses import dataclass
 from typing import Callable, Optional
 
 from .parser import PlanNode
+from .plan_utils import estimate_off, estimate_ratio, walk
 
 LARGE_SCAN_ROWS = 10_000
 LARGE_OUTER_ROWS = 1_000
@@ -116,8 +117,6 @@ def seq_scan_large_table(node: PlanNode) -> LintFinding | None:
 
 
 def bad_row_estimate(node: PlanNode) -> LintFinding | None:
-    from .summary import estimate_off, estimate_ratio
-
     if not estimate_off(node):
         return None
     ratio = estimate_ratio(node)
@@ -205,16 +204,10 @@ RULES: list[Rule] = [
 ]
 
 
-def _walk(node: PlanNode):
-    yield node
-    for child in node.children:
-        yield from _walk(child)
-
-
 def _pattern_applications(root: PlanNode) -> dict[tuple, int]:
     """How many times each (relation, filter) pattern executes in the plan."""
     counts: dict[tuple, int] = {}
-    for node in _walk(root):
+    for node in walk(root):
         if node.relation_name:
             key = (node.relation_name, node.filter_cond)
             counts[key] = counts.get(key, 0) + (node.actual_loops or 1)
@@ -225,7 +218,7 @@ def lint_plan(root: PlanNode) -> list[LintFinding]:
     applications = _pattern_applications(root)
 
     detected = [
-        finding for node in _walk(root) for rule in RULES if (finding := rule(node))
+        finding for node in walk(root) for rule in RULES if (finding := rule(node))
     ]
 
     # policy a: index suggestions only when the pattern repeats
