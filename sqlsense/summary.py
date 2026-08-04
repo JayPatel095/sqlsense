@@ -21,11 +21,12 @@ Input is always a PlanNode tree from parser.parse_plan. Three jobs here:
      Fine for v1 (it still points at the hot subtree); self-time needs
      child subtraction across loop counts — revisit if it misleads.
 
-3. estimate_ratio / estimate_off
-   ratio = plan_rows / actual_rows, both clamped to >= 1 so zero rows
-   doesn't divide-by-zero (0 rows vs estimate 100k should still flag).
-   Off = ratio > 10 or < 0.1 (brief's threshold). None when unknowable
-   (no ANALYZE). This doubles as the M4 stale-statistics lint input.
+3. estimate_ratio / estimate_off (now in plan_utils, imported here)
+   Moved out once lint needed them too — lint importing this module for
+   its stale-statistics rule had it depending on presentation code. Only
+   used here for the "estimate off by ~Kx" sentence tail.
+
+Tree traversal lives in plan_utils.walk for the same reason.
 """
 
 from __future__ import annotations
