@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sqlsense"
-version = "0.1.0.dev0"
+dynamic = ["version"]
 description = "Explains SQL query plans in plain English and tells you exactly what index to add"
 requires-python = ">=3.10"
 dependencies = [
@@ -21,3 +21,7 @@ sqlsense = "sqlsense.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["sqlsense*"]
+
+# version lives only in sqlsense/__init__.py
+[tool.setuptools.dynamic]
+version = {attr = "sqlsense.__version__"}
