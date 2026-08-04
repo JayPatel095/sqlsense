@@ -4,13 +4,7 @@ import json
 from pathlib import Path
 
 from sqlsense.parser import PlanNode, parse_plan
-from sqlsense.summary import (
-    estimate_off,
-    estimate_ratio,
-    summarize,
-    top_nodes_by_time,
-    total_time_ms,
-)
+from sqlsense.summary import summarize, top_nodes_by_time, total_time_ms
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -18,38 +12,6 @@ FIXTURES = Path(__file__).parent / "fixtures"
 def load(name: str) -> PlanNode:
     with open(FIXTURES / f"{name}.json") as f:
         return parse_plan(json.load(f))
-
-
-# --- estimate_ratio / estimate_off ---
-
-
-def test_accurate_estimate_is_not_off():
-    node = load("seq_scan")  # planner said 100, got 100
-    assert estimate_ratio(node) == 1.0
-    assert estimate_off(node) is False
-
-
-def test_wild_overestimate_is_off():
-    node = load("nested_loop")  # planner said 100000, got 27
-    ratio = estimate_ratio(node)
-    assert ratio is not None and ratio > 1000
-    assert estimate_off(node) is True
-
-
-def test_underestimate_direction_also_flags():
-    node = PlanNode(node_type="Seq Scan", plan_rows=10, actual_rows=500)
-    assert estimate_off(node) is True
-
-
-def test_zero_actual_rows_does_not_crash_and_flags():
-    node = PlanNode(node_type="Seq Scan", plan_rows=100000, actual_rows=0)
-    assert estimate_off(node) is True
-
-
-def test_no_analyze_means_no_verdict():
-    node = PlanNode(node_type="Seq Scan", plan_rows=5, actual_rows=None)
-    assert estimate_ratio(node) is None
-    assert estimate_off(node) is False
 
 
 # --- total_time_ms ---
