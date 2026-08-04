@@ -18,7 +18,7 @@ The five rules, and the judgment calls baked into them:
    CREATE INDEX statement is M5's job (needs sqlglot column extraction).
 
 2. bad_row_estimate (warn)
-   Reuses summary.estimate_off (>10x or <0.1x). Suggestion: ANALYZE <table>
+   Reuses plan_utils.estimate_off (>10x or <0.1x). Suggestion: ANALYZE <table>
    (or plain ANALYZE when the node has no relation). Skip nodes whose
    parent is equally off? No — dedup is presentation's problem, not lint's.
 
