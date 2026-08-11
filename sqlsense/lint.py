@@ -87,6 +87,9 @@ INDEX_SUGGESTION_RULES = frozenset(
 
 Rule = Callable[[PlanNode], LintFinding | None]
 
+# the access pattern an index would serve: (relation, filter text)
+PatternKey = tuple[str, str | None]
+
 
 def _total_rows(node: PlanNode) -> int | None:
     """Rows a node produced across all loops (actual_rows is per-loop)."""
@@ -211,14 +214,27 @@ RULES: list[Rule] = [
 ]
 
 
-def _pattern_applications(root: PlanNode) -> dict[tuple, int]:
+def _pattern_key(node: PlanNode) -> PatternKey | None:
+    """The access pattern this node applies, or None if it touches no relation."""
+    if not node.relation_name:
+        return None
+    return (node.relation_name, node.filter_cond)
+
+
+def _pattern_applications(root: PlanNode) -> dict[PatternKey, int]:
     """How many times each (relation, filter) pattern executes in the plan."""
-    counts: dict[tuple, int] = {}
+    counts: dict[PatternKey, int] = {}
     for node in walk(root):
-        if node.relation_name:
-            key = (node.relation_name, node.filter_cond)
+        key = _pattern_key(node)
+        if key is not None:
             counts[key] = counts.get(key, 0) + (node.actual_loops or 1)
     return counts
+
+
+def _pattern_repeats(node: PlanNode, applications: dict[PatternKey, int]) -> bool:
+    """Whether this node's access pattern runs more than once in the plan."""
+    key = _pattern_key(node)
+    return key is not None and applications.get(key, 0) > 1
 
 
 def lint_plan(root: PlanNode) -> list[LintFinding]:
@@ -233,7 +249,7 @@ def lint_plan(root: PlanNode) -> list[LintFinding]:
         f
         for f in detected
         if f.rule not in INDEX_SUGGESTION_RULES
-        or applications.get((f.node.relation_name, f.node.filter_cond), 0) > 1
+        or _pattern_repeats(f.node, applications)
     ]
 
     # policy b: identical advice prints once, with a count
