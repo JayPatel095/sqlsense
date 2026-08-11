@@ -16,7 +16,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8"]
+dev = ["pytest>=8", "ruff>=0.16", "mypy>=2.3"]
 
 [project.scripts]
 sqlsense = "sqlsense.cli:main"
@@ -27,3 +27,15 @@ include = ["sqlsense*"]
 # version lives only in sqlsense/__init__.py
 [tool.setuptools.dynamic]
 version = {attr = "sqlsense.__version__"}
+
+# ruff covers both lint and format; target version is inferred from
+# project.requires-python, so it stays correct if that floor moves.
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle
+    "F",   # pyflakes
+    "I",   # import sorting
+    "UP",  # pyupgrade
+    "B",   # bugbear
+    "SIM", # simplify
+]
