@@ -111,7 +111,9 @@ def seq_scan_large_table(node: PlanNode) -> LintFinding | None:
             f"sequential scan read {scanned:,} rows from {node.relation_name} "
             f"to return {_total_rows(node):,}"
         ),
-        suggestion=f"add an index on {node.relation_name}{where} so this becomes an index scan",
+        suggestion=(
+            f"add an index on {node.relation_name}{where} so this becomes an index scan"
+        ),
         node=node,
     )
 
@@ -145,7 +147,10 @@ def disk_spill(node: PlanNode) -> LintFinding | None:
         rule="disk_spill",
         severity="error",
         message=f"{detail} — the working set does not fit in work_mem",
-        suggestion="raise work_mem for this session (SET work_mem = '64MB') and re-run; tune globally only if it recurs",
+        suggestion=(
+            "raise work_mem for this session (SET work_mem = '64MB') and re-run; "
+            "tune globally only if it recurs"
+        ),
         node=node,
     )
 
