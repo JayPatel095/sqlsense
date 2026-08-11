@@ -30,6 +30,26 @@ version = {attr = "sqlsense.__version__"}
 
 # ruff covers both lint and format; target version is inferred from
 # project.requires-python, so it stays correct if that floor moves.
+[tool.mypy]
+files = ["sqlsense", "tests"]
+strict = true
+# tests/ has no __init__.py, so its modules are top-level (test_lint, ...) and
+# no override pattern can select them — mypy only allows a trailing ".*".
+# So relax the annotation ceremony globally and re-tighten it on the package.
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+
+[[tool.mypy.overrides]]
+module = "sqlsense.*"
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+
+# psycopg2-binary ships no stubs
+[[tool.mypy.overrides]]
+module = "psycopg2.*"
+ignore_missing_imports = true
+
+
 [tool.ruff.lint]
 select = [
     "E",   # pycodestyle
