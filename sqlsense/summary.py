@@ -44,9 +44,13 @@ def total_time_ms(node: PlanNode) -> float | None:
 
 
 def top_nodes_by_time(root: PlanNode, n: int = 3) -> list[PlanNode]:
-    timed = [node for node in walk(root) if total_time_ms(node) is not None]
-    timed.sort(key=total_time_ms, reverse=True)
-    return timed[:n]
+    timed = [
+        (total, node)
+        for node in walk(root)
+        if (total := total_time_ms(node)) is not None
+    ]
+    timed.sort(key=lambda pair: pair[0], reverse=True)
+    return [node for _, node in timed[:n]]
 
 
 def summarize(root: PlanNode) -> list[str]:

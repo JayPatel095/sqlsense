@@ -119,9 +119,9 @@ def seq_scan_large_table(node: PlanNode) -> LintFinding | None:
 
 
 def bad_row_estimate(node: PlanNode) -> LintFinding | None:
-    if not estimate_off(node):
-        return None
     ratio = estimate_ratio(node)
+    if ratio is None or not estimate_off(node):
+        return None
     factor = ratio if ratio >= 1 else 1 / ratio
     target = f"ANALYZE {node.relation_name}" if node.relation_name else "ANALYZE"
     return LintFinding(
