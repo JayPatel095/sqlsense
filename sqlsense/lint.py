@@ -58,8 +58,8 @@ the order above per node.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable, Optional
 
 from .parser import PlanNode
 from .plan_utils import estimate_off, estimate_ratio, walk
@@ -85,7 +85,7 @@ INDEX_SUGGESTION_RULES = frozenset(
 )
 
 
-Rule = Callable[[PlanNode], Optional[LintFinding]]
+Rule = Callable[[PlanNode], LintFinding | None]
 
 
 def _total_rows(node: PlanNode) -> int | None:

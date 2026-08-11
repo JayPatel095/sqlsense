@@ -7,7 +7,7 @@ by scripts/generate_fixtures.sh; assertions use their literal values.
 import json
 from pathlib import Path
 
-from sqlsense.parser import PlanNode, parse_plan
+from sqlsense.parser import parse_plan
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
