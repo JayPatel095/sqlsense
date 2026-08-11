@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import sqlite3
 from dataclasses import dataclass
+from typing import Any
 
 
 class DatabaseError(Exception):
@@ -14,7 +15,9 @@ class DatabaseError(Exception):
 @dataclass
 class Connection:
     dialect: str  # "postgres" | "sqlite"
-    raw: object  # DB-API connection
+    # psycopg2 and sqlite3 connections share no usable static type — the two
+    # sides are duck-typed and picked by `dialect`, so Any is the honest hint
+    raw: Any  # DB-API connection
 
     def close(self) -> None:
         self.raw.close()

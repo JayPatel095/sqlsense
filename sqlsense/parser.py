@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import Any
 
 
 @dataclass
@@ -22,7 +23,7 @@ class PlanNode:
     children: list[PlanNode] = field(default_factory=list)
 
 
-def parse_plan(explain_json: list | dict) -> PlanNode:
+def parse_plan(explain_json: list[Any] | dict[str, Any]) -> PlanNode:
     """Parse loaded EXPLAIN (ANALYZE, FORMAT JSON) output into a PlanNode tree.
 
     Accepts either the one-element list envelope EXPLAIN produces
@@ -49,7 +50,7 @@ def parse_plan(explain_json: list | dict) -> PlanNode:
     return _parse_node(doc["Plan"])
 
 
-def _parse_node(raw: dict) -> PlanNode:
+def _parse_node(raw: dict[str, Any]) -> PlanNode:
     return PlanNode(
         node_type=raw["Node Type"],
         plan_rows=raw.get("Plan Rows"),

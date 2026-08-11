@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from typing import Any
 
 from .db import Connection, DatabaseError
 
@@ -14,7 +15,7 @@ def run_explain(conn: Connection, query: str) -> str:
     return _explain_sqlite(conn.raw, query)
 
 
-def _explain_postgres(raw, query: str) -> str:
+def _explain_postgres(raw: Any, query: str) -> str:
     import psycopg2
 
     # ANALYZE executes the query for real; roll back afterwards so
@@ -31,7 +32,7 @@ def _explain_postgres(raw, query: str) -> str:
     return json.dumps(plan, indent=2)
 
 
-def _explain_sqlite(raw, query: str) -> str:
+def _explain_sqlite(raw: Any, query: str) -> str:
     # SQLite has no ANALYZE-style instrumentation: EXPLAIN QUERY PLAN is a
     # static plan with no timing or row counts (degraded mode by design).
     try:
