@@ -157,7 +157,9 @@ def nested_loop_large_outer(node: PlanNode) -> LintFinding | None:
     if outer_rows is None or outer_rows <= LARGE_OUTER_ROWS:
         return None
     inner = node.children[1] if len(node.children) > 1 else None
-    inner_name = inner.relation_name if inner and inner.relation_name else "the inner side"
+    inner_name = (
+        inner.relation_name if inner and inner.relation_name else "the inner side"
+    )
     return LintFinding(
         rule="nested_loop_large_outer",
         severity="warn",

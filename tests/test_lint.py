@@ -62,8 +62,9 @@ def test_estimate_rule_fires_on_nested_loop_fixture():
 
 
 def test_estimate_rule_names_relation_when_known():
-    node = PlanNode(node_type="Seq Scan", relation_name="orders",
-                    plan_rows=100_000, actual_rows=5)
+    node = PlanNode(
+        node_type="Seq Scan", relation_name="orders", plan_rows=100_000, actual_rows=5
+    )
     finding = bad_row_estimate(node)
     assert finding is not None
     assert "ANALYZE orders" in finding.suggestion
@@ -114,10 +115,18 @@ def _nested_loop(outer_rows: int, loops: int = 1) -> PlanNode:
     return PlanNode(
         node_type="Nested Loop",
         children=[
-            PlanNode(node_type="Seq Scan", relation_name="big",
-                     actual_rows=outer_rows, actual_loops=loops),
-            PlanNode(node_type="Index Scan", relation_name="small",
-                     actual_rows=1, actual_loops=outer_rows * loops),
+            PlanNode(
+                node_type="Seq Scan",
+                relation_name="big",
+                actual_rows=outer_rows,
+                actual_loops=loops,
+            ),
+            PlanNode(
+                node_type="Index Scan",
+                relation_name="small",
+                actual_rows=1,
+                actual_loops=outer_rows * loops,
+            ),
         ],
     )
 
@@ -145,7 +154,10 @@ def test_low_selectivity_fires_on_filtered_fixture():
     finding = low_selectivity_index_scan(load("index_scan_filtered"))
     assert finding is not None
     assert "status" in finding.suggestion  # quotes the discarding filter
-    assert "partial" in finding.suggestion.lower() or "composite" in finding.suggestion.lower()
+    assert (
+        "partial" in finding.suggestion.lower()
+        or "composite" in finding.suggestion.lower()
+    )
 
 
 def test_low_selectivity_silent_without_filter():
@@ -153,9 +165,14 @@ def test_low_selectivity_silent_without_filter():
 
 
 def test_low_selectivity_silent_when_filter_cheap():
-    node = PlanNode(node_type="Index Scan", relation_name="t", index_name="i",
-                    actual_rows=90, rows_removed_by_filter=10,
-                    filter_cond="(x = 1)")
+    node = PlanNode(
+        node_type="Index Scan",
+        relation_name="t",
+        index_name="i",
+        actual_rows=90,
+        rows_removed_by_filter=10,
+        filter_cond="(x = 1)",
+    )
     assert low_selectivity_index_scan(node) is None
 
 
@@ -189,15 +206,27 @@ def test_one_shot_filtered_index_scan_is_gated_too():
 
 def _repeated_inner_scan(loops: int) -> PlanNode:
     inner = PlanNode(
-        node_type="Seq Scan", relation_name="orders",
+        node_type="Seq Scan",
+        relation_name="orders",
         filter_cond="(customer_id = c.id)",
-        actual_rows=5, rows_removed_by_filter=20_000,
-        actual_loops=loops, plan_rows=5,
+        actual_rows=5,
+        rows_removed_by_filter=20_000,
+        actual_loops=loops,
+        plan_rows=5,
     )
-    outer = PlanNode(node_type="Seq Scan", relation_name="customers",
-                     actual_rows=loops, actual_loops=1, plan_rows=loops)
-    return PlanNode(node_type="Nested Loop", actual_rows=5 * loops,
-                    plan_rows=5 * loops, children=[outer, inner])
+    outer = PlanNode(
+        node_type="Seq Scan",
+        relation_name="customers",
+        actual_rows=loops,
+        actual_loops=1,
+        plan_rows=loops,
+    )
+    return PlanNode(
+        node_type="Nested Loop",
+        actual_rows=5 * loops,
+        plan_rows=5 * loops,
+        children=[outer, inner],
+    )
 
 
 def test_filter_repeated_via_loops_fires():
@@ -206,11 +235,16 @@ def test_filter_repeated_via_loops_fires():
 
 
 def test_same_filter_in_two_branches_fires_once_with_count():
-    scan = dict(node_type="Seq Scan", relation_name="orders",
-                filter_cond="(status = 'x')", actual_rows=20_000,
-                rows_removed_by_filter=80_000, actual_loops=1, plan_rows=20_000)
-    root = PlanNode(node_type="Append",
-                    children=[PlanNode(**scan), PlanNode(**scan)])
+    scan = dict(
+        node_type="Seq Scan",
+        relation_name="orders",
+        filter_cond="(status = 'x')",
+        actual_rows=20_000,
+        rows_removed_by_filter=80_000,
+        actual_loops=1,
+        plan_rows=20_000,
+    )
+    root = PlanNode(node_type="Append", children=[PlanNode(**scan), PlanNode(**scan)])
     findings = [f for f in lint_plan(root) if f.rule == "seq_scan_large_table"]
     assert len(findings) == 1  # deduped: identical advice prints once
     assert findings[0].count == 2
@@ -220,10 +254,14 @@ def test_same_filter_in_two_branches_fires_once_with_count():
 
 
 def test_identical_estimate_findings_merge():
-    scan = dict(node_type="Seq Scan", relation_name="orders",
-                plan_rows=100_000, actual_rows=5, actual_loops=1)
-    root = PlanNode(node_type="Append",
-                    children=[PlanNode(**scan), PlanNode(**scan)])
+    scan = dict(
+        node_type="Seq Scan",
+        relation_name="orders",
+        plan_rows=100_000,
+        actual_rows=5,
+        actual_loops=1,
+    )
+    root = PlanNode(node_type="Append", children=[PlanNode(**scan), PlanNode(**scan)])
     findings = [f for f in lint_plan(root) if f.rule == "bad_row_estimate"]
     assert len(findings) == 1
     assert findings[0].count == 2
@@ -232,6 +270,7 @@ def test_identical_estimate_findings_merge():
 def test_distinct_suggestions_do_not_merge():
     # nested_loop fixture: root (no relation) says "run ANALYZE", inner
     # index scan says "run ANALYZE orders" — different advice, keep both
-    findings = [f for f in lint_plan(load("nested_loop"))
-                if f.rule == "bad_row_estimate"]
+    findings = [
+        f for f in lint_plan(load("nested_loop")) if f.rule == "bad_row_estimate"
+    ]
     assert len(findings) == 2

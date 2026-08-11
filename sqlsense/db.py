@@ -50,7 +50,8 @@ def _connect_postgres(dsn: str) -> Connection:
     except psycopg2.Error as exc:
         detail = str(exc).strip().splitlines()
         raise DatabaseError(
-            "could not connect to PostgreSQL: " + (detail[0] if detail else "unknown error")
+            "could not connect to PostgreSQL: "
+            + (detail[0] if detail else "unknown error")
         ) from exc
     return Connection(dialect="postgres", raw=raw)
 

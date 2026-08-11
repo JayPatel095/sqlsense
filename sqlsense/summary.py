@@ -50,9 +50,7 @@ def top_nodes_by_time(root: PlanNode, n: int = 3) -> list[PlanNode]:
 
 
 def summarize(root: PlanNode) -> list[str]:
-    return [
-        _sentence(node) for node in walk(root) if node.node_type not in GLUE_NODES
-    ]
+    return [_sentence(node) for node in walk(root) if node.node_type not in GLUE_NODES]
 
 
 def _sentence(node: PlanNode) -> str:

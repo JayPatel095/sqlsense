@@ -68,7 +68,9 @@ def main(db_url: str, query: str, raw: bool) -> None:
     if findings:
         console.print("\n[bold]Suggestions[/bold]")
         for f in findings:
-            badge = "[red]error[/red]" if f.severity == "error" else "[yellow]warn[/yellow]"
+            badge = (
+                "[red]error[/red]" if f.severity == "error" else "[yellow]warn[/yellow]"
+            )
             seen = f" [dim](x{f.count} in this plan)[/dim]" if f.count > 1 else ""
             console.print(f"  {badge} {f.message}{seen}")
             console.print(f"       [green]->[/green] {f.suggestion}")
