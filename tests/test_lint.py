@@ -7,6 +7,7 @@ synthetic PlanNodes cover shapes the planner avoids on a healthy testdb
 
 import json
 from pathlib import Path
+from typing import Any
 
 from sqlsense.lint import (
     LintFinding,
@@ -235,7 +236,7 @@ def test_filter_repeated_via_loops_fires():
 
 
 def test_same_filter_in_two_branches_fires_once_with_count():
-    scan = dict(
+    scan: dict[str, Any] = dict(
         node_type="Seq Scan",
         relation_name="orders",
         filter_cond="(status = 'x')",
@@ -254,7 +255,7 @@ def test_same_filter_in_two_branches_fires_once_with_count():
 
 
 def test_identical_estimate_findings_merge():
-    scan = dict(
+    scan: dict[str, Any] = dict(
         node_type="Seq Scan",
         relation_name="orders",
         plan_rows=100_000,

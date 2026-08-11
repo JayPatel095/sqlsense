@@ -20,6 +20,7 @@ def load(name: str) -> PlanNode:
 def test_total_time_multiplies_by_loops():
     inner = load("nested_loop").children[1]  # ran 9 times
     assert inner.actual_loops == 9
+    assert inner.actual_time_ms is not None
     assert total_time_ms(inner) == inner.actual_time_ms * 9
 
 
@@ -33,7 +34,8 @@ def test_total_time_none_without_analyze():
 def test_top_nodes_ranked_descending():
     top = top_nodes_by_time(load("sort_limit"), n=3)
     assert len(top) == 3
-    times = [total_time_ms(n) for n in top]
+    times = [t for n in top if (t := total_time_ms(n)) is not None]
+    assert len(times) == len(top)  # every ranked node carries a time
     assert times == sorted(times, reverse=True)
     # inclusive semantics: the root Limit carries the whole query's time
     assert top[0].node_type == "Limit"
